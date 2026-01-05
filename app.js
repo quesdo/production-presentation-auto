@@ -8,7 +8,7 @@ const slides = [
     {
         text: "The virtual twin of the production system brings everything together:\n• machines, their kinematics and programs;\n• operators and their skills;\n• work instructions;\n• material flows;\n• manufacturing methods;\n• automation resources.\nInside this virtual world, we deploy virtual companions.",
         media: "PSY 1",
-        timestamp: 0 // 0s - same as intro
+        timestamp: 3 // 3s - after start click
     },
     {
         text: "Here's a concrete example:\nan aerospace & defense contract requires a 40% capacity increase on a critical assembly line.\nThe Virtual Twin allows multiple layout scenarios, optimizes cycle times, proposes new line-balancing strategies, validates operator movements in simulation and anticipates ergonomic risks.",
