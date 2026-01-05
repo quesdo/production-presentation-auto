@@ -8,27 +8,27 @@ const slides = [
     {
         text: "The virtual twin of the production system brings everything together:\n• machines, their kinematics and programs;\n• operators and their skills;\n• work instructions;\n• material flows;\n• manufacturing methods;\n• automation resources.\nInside this virtual world, we deploy virtual companions.",
         media: "PSY 1",
-        timestamp: 18 // 18s
+        timestamp: 0 // 0s - same as intro
     },
     {
         text: "Here's a concrete example:\nan aerospace & defense contract requires a 40% capacity increase on a critical assembly line.\nThe Virtual Twin allows multiple layout scenarios, optimizes cycle times, proposes new line-balancing strategies, validates operator movements in simulation and anticipates ergonomic risks.",
         media: "PSY 2",
-        timestamp: 36 // 36s
+        timestamp: 18 // 18s
     },
     {
         text: "The virtual companion supports work instructions updates and execution.",
         media: "PSY 3",
-        timestamp: 41 // 41s
+        timestamp: 36 // 36s
     },
     {
         text: "Now virtual meets real — this is Sense Computing.\nOn an assembly station, machine vision detects in real time\npotential errors, missing tools, or incorrect component orientation.\nThe operator receives contextual guidance in a hybrid virtual–real environment.",
         media: "PSY 4",
-        timestamp: 59 // 59s
+        timestamp: 41 // 41s
     },
     {
         text: "The result?\nErrors are prevented before they happen,\nand know-how is captured and continuously capitalized in order to ensure the right level of productivity to address the A&D market.",
         media: "PSY Content",
-        timestamp: 72 // 72s (1:12) - estimated based on pattern
+        timestamp: 59 // 59s
     }
 ];
 
