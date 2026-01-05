@@ -346,6 +346,15 @@ async function nextSlide() {
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
 
+        // Update Supabase FIRST to sync with all clients
+        currentSlide = 0;
+        if (!isLocalAction) {
+            await updateSession({
+                current_slide: currentSlide,
+                audio_timestamp: 0
+            });
+        }
+
         // Start audio playback
         if (audioPlayer) {
             try {
@@ -357,17 +366,8 @@ async function nextSlide() {
             }
         }
 
-        // Start first slide
-        currentSlide = 0;
+        // Show first slide
         nextSlideLocal();
-
-        // Update Supabase to sync with all clients
-        if (!isLocalAction) {
-            await updateSession({
-                current_slide: currentSlide,
-                audio_timestamp: audioPlayer ? audioPlayer.currentTime : 0
-            });
-        }
     }
 }
 
