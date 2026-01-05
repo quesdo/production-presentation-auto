@@ -339,21 +339,21 @@ async function nextSlide() {
 
     // On first click, show Manufacturing Sound and start audio presentation
     if (!soundStarted) {
+        // Update Supabase FIRST to sync with all clients (BEFORE changing local state)
+        if (!isLocalAction) {
+            await updateSession({
+                current_slide: 0,
+                audio_timestamp: 0
+            });
+        }
+
+        // Now update local state
         toggleVisibility("Manufacturing Sound", true);
         soundStarted = true;
         isPresentationRunning = true;
 
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
-
-        // Update Supabase FIRST to sync with all clients
-        currentSlide = 0;
-        if (!isLocalAction) {
-            await updateSession({
-                current_slide: currentSlide,
-                audio_timestamp: 0
-            });
-        }
 
         // Start audio playback
         if (audioPlayer) {
@@ -367,6 +367,7 @@ async function nextSlide() {
         }
 
         // Show first slide
+        currentSlide = 0;
         nextSlideLocal();
     }
 }
