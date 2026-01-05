@@ -1,41 +1,42 @@
-// ===== PRESENTATION DATA WITH TIMINGS =====
+// ===== PRESENTATION DATA WITH AUDIO TIMINGS =====
 const slides = [
     {
         text: "Virtual Twin of the Production System\n\nGuide: how do we meet higher production rates?\nAnd how do we adapt our lines to aerospace & defense products?",
         media: null,
-        duration: 10000 // 10s
+        timestamp: 0 // Start at 0s
     },
     {
         text: "The virtual twin of the production system brings everything together:\n• machines, their kinematics and programs;\n• operators and their skills;\n• work instructions;\n• material flows;\n• manufacturing methods;\n• automation resources.\nInside this virtual world, we deploy virtual companions.",
         media: "PSY 1",
-        duration: 17000 // 27s - 10s = 17s
+        timestamp: 18 // 18s
     },
     {
         text: "Here's a concrete example:\nan aerospace & defense contract requires a 40% capacity increase on a critical assembly line.\nThe Virtual Twin allows multiple layout scenarios, optimizes cycle times, proposes new line-balancing strategies, validates operator movements in simulation and anticipates ergonomic risks.",
         media: "PSY 2",
-        duration: 20000 // 47s - 27s = 20s
+        timestamp: 36 // 36s
     },
     {
         text: "The virtual companion supports work instructions updates and execution.",
         media: "PSY 3",
-        duration: 8000 // 55s - 47s = 8s
+        timestamp: 41 // 41s
     },
     {
         text: "Now virtual meets real — this is Sense Computing.\nOn an assembly station, machine vision detects in real time\npotential errors, missing tools, or incorrect component orientation.\nThe operator receives contextual guidance in a hybrid virtual–real environment.",
         media: "PSY 4",
-        duration: 17000 // 72s - 55s = 17s
-    },
-    {
-        text: "",
-        media: "PSY 5",
-        duration: 5000 // 77s - 72s = 5s
+        timestamp: 59 // 59s
     },
     {
         text: "The result?\nErrors are prevented before they happen,\nand know-how is captured and continuously capitalized in order to ensure the right level of productivity to address the A&D market.",
         media: "PSY Content",
-        duration: 0 // Last slide - no auto progression
+        timestamp: 72 // 72s (1:12) - estimated based on pattern
     }
 ];
+
+// ===== SUPABASE STATE =====
+let supabaseClient = null;
+let realtimeChannel = null;
+let sessionId = null;
+let isLocalAction = false; // Flag to prevent update loops
 
 // ===== STATE MANAGEMENT =====
 let currentSlide = -1; // Start at -1 to show intro
@@ -43,6 +44,8 @@ let activeMedia = null; // Track currently visible media
 let soundStarted = false; // Track if Manufacturing Sound has been shown
 let autoProgressTimer = null; // Timer for auto progression
 let isPresentationRunning = false; // Track if presentation is running
+let audioPlayer = null; // Audio element
+let audioStartTime = null; // Track when audio started
 
 // ===== SDK INTEGRATION =====
 // Function to send visibility messages to the SDK platform
@@ -88,10 +91,165 @@ function hideASISProduction() {
     console.log("AS IS Production hidden");
 }
 
+// ===== SUPABASE SETUP =====
+async function initSupabase() {
+    try {
+        // Initialize Supabase client
+        supabaseClient = window.supabase.createClient(
+            window.SUPABASE_URL,
+            window.SUPABASE_ANON_KEY
+        );
+
+        console.log('Supabase client initialized');
+
+        // Get or create session
+        const { data, error } = await supabaseClient
+            .from('production_presentation_session')
+            .select('*')
+            .limit(1)
+            .single();
+
+        if (error) {
+            console.error('Error fetching session:', error);
+            return;
+        }
+
+        sessionId = data.id;
+        console.log('Connected to session:', sessionId);
+
+        // Subscribe to real-time updates
+        realtimeChannel = supabaseClient
+            .channel('production_presentation_session_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'production_presentation_session'
+                },
+                handleSessionUpdate
+            )
+            .subscribe((status) => {
+                console.log('Realtime subscription status:', status);
+            });
+
+        console.log('Production Auto Real-time subscription active');
+
+    } catch (err) {
+        console.error('Supabase initialization error:', err);
+    }
+}
+
+// ===== SUPABASE UPDATE FUNCTIONS =====
+async function updateSession(updates) {
+    if (!supabaseClient || !sessionId) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('production_presentation_session')
+            .update(updates)
+            .eq('id', sessionId);
+
+        if (error) {
+            console.error('Error updating session:', error);
+        } else {
+            console.log('Session updated:', updates);
+        }
+    } catch (err) {
+        console.error('Update error:', err);
+    }
+}
+
+function handleSessionUpdate(payload) {
+    console.log('Received update:', payload);
+
+    if (isLocalAction) {
+        console.log('Ignoring own update');
+        return;
+    }
+
+    const newSlide = payload.new.current_slide;
+    const audioTimestamp = payload.new.audio_timestamp;
+    console.log('Syncing to slide:', newSlide, 'audio:', audioTimestamp);
+
+    syncToSlide(newSlide, audioTimestamp);
+}
+
+async function syncToSlide(targetSlide, audioTimestamp) {
+    // Set flag to prevent loop
+    isLocalAction = true;
+
+    if (targetSlide === -1 && currentSlide !== -1) {
+        // Restart to beginning
+        restartPresentationLocal();
+    } else if (targetSlide === 0 && currentSlide === -1) {
+        // Start presentation from beginning
+        const nextBtn = document.getElementById('nextBtn');
+
+        // Show Manufacturing Sound and start audio presentation
+        toggleVisibility("Manufacturing Sound", true);
+        soundStarted = true;
+        isPresentationRunning = true;
+
+        // Hide the button during auto-presentation
+        nextBtn.style.display = 'none';
+
+        // Start audio playback
+        if (audioPlayer && !audioPlayer.playing) {
+            try {
+                // Sync audio to the timestamp if provided
+                if (audioTimestamp !== undefined) {
+                    audioPlayer.currentTime = audioTimestamp;
+                }
+                await audioPlayer.play();
+                audioStartTime = Date.now();
+                console.log('Audio started (synced)');
+            } catch (error) {
+                console.error('Error playing audio:', error);
+            }
+        }
+
+        // Advance to first slide
+        currentSlide = 0;
+        nextSlideLocal();
+    } else if (targetSlide > currentSlide) {
+        // Sync forward progression (someone else advanced)
+        // Make sure presentation is running
+        if (!soundStarted) {
+            const nextBtn = document.getElementById('nextBtn');
+            toggleVisibility("Manufacturing Sound", true);
+            soundStarted = true;
+            isPresentationRunning = true;
+            nextBtn.style.display = 'none';
+
+            // Start audio if not already playing
+            if (audioPlayer && !audioPlayer.playing) {
+                try {
+                    if (audioTimestamp !== undefined) {
+                        audioPlayer.currentTime = audioTimestamp;
+                    }
+                    await audioPlayer.play();
+                    console.log('Audio started (synced)');
+                } catch (error) {
+                    console.error('Error playing audio:', error);
+                }
+            }
+        }
+
+        // Sync to target slide
+        currentSlide = targetSlide;
+        nextSlideLocal();
+    }
+
+    // Reset flag
+    isLocalAction = false;
+}
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     initStars();
     initPresentation();
+    initSupabase();
 
     console.log("Production System Presentation (Auto) loaded - SDK ready");
 });
@@ -122,6 +280,11 @@ function initPresentation() {
     const nextBtn = document.getElementById('nextBtn');
     const textContent = document.getElementById('textContent');
 
+    // Create audio player
+    audioPlayer = new Audio('VT-Prod-System.mp3');
+    audioPlayer.addEventListener('timeupdate', handleAudioTimeUpdate);
+    audioPlayer.addEventListener('ended', handleAudioEnded);
+
     // Hide all PSY media at start (but NOT AS IS Production yet)
     hideAllMedia();
 
@@ -141,12 +304,40 @@ function initPresentation() {
     updateProgress();
 }
 
-function nextSlide() {
-    const textContent = document.getElementById('textContent');
-    const slideText = textContent.querySelector('.slide-text');
+// Handle audio time updates to sync slides
+function handleAudioTimeUpdate() {
+    if (!isPresentationRunning || !audioPlayer) return;
+
+    const currentTime = audioPlayer.currentTime;
+
+    // Find the next slide that should be shown based on audio time
+    for (let i = slides.length - 1; i >= 0; i--) {
+        if (currentTime >= slides[i].timestamp && currentSlide < i) {
+            currentSlide = i;
+            nextSlideLocal();
+            break;
+        }
+    }
+}
+
+// Handle audio ended
+function handleAudioEnded() {
+    console.log('Audio ended');
+    isPresentationRunning = false;
+
+    // Show finish button
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn && currentSlide === slides.length - 1) {
+        nextBtn.style.display = 'block';
+        nextBtn.querySelector('.btn-text').textContent = 'Finish';
+        nextBtn.onclick = showEndScreen;
+    }
+}
+
+async function nextSlide() {
     const nextBtn = document.getElementById('nextBtn');
 
-    // On first click, show Manufacturing Sound and start auto presentation
+    // On first click, show Manufacturing Sound and start audio presentation
     if (!soundStarted) {
         toggleVisibility("Manufacturing Sound", true);
         soundStarted = true;
@@ -154,27 +345,36 @@ function nextSlide() {
 
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
+
+        // Start audio playback
+        if (audioPlayer) {
+            try {
+                await audioPlayer.play();
+                audioStartTime = Date.now();
+                console.log('Audio started');
+            } catch (error) {
+                console.error('Error playing audio:', error);
+            }
+        }
+
+        // Start first slide
+        currentSlide = 0;
+        nextSlideLocal();
+
+        // Update Supabase to sync with all clients
+        if (!isLocalAction) {
+            await updateSession({
+                current_slide: currentSlide,
+                audio_timestamp: audioPlayer ? audioPlayer.currentTime : 0
+            });
+        }
     }
+}
 
-    // Clear any existing timer
-    if (autoProgressTimer) {
-        clearTimeout(autoProgressTimer);
-        autoProgressTimer = null;
-    }
-
-    // Don't hide previous media - keep them visible!
-    // Each new media adds to the scene
-
-    // Move to next slide
-    currentSlide++;
-
-    // Check if presentation is complete
-    if (currentSlide >= slides.length) {
-        // End of presentation
-        isPresentationRunning = false;
-        showEndScreen();
-        return;
-    }
+function nextSlideLocal() {
+    const textContent = document.getElementById('textContent');
+    const slideText = textContent.querySelector('.slide-text');
+    const nextBtn = document.getElementById('nextBtn');
 
     // Animate out current text
     textContent.classList.remove('show');
@@ -207,15 +407,10 @@ function nextSlide() {
         // Update progress
         updateProgress();
 
-        // Auto-progress to next slide if duration is set and presentation is running
-        if (isPresentationRunning && slide.duration > 0) {
-            autoProgressTimer = setTimeout(() => {
-                nextSlide();
-            }, slide.duration);
-        } else if (currentSlide === slides.length - 1) {
-            // Last slide - show finish button
-            nextBtn.style.display = 'block';
-            nextBtn.querySelector('.btn-text').textContent = 'Finish';
+        // Check if this is the last slide
+        if (currentSlide === slides.length - 1) {
+            // Last slide - show finish button after audio ends
+            // The finish button will be shown by handleAudioEnded
         }
     }, 500);
 }
@@ -245,7 +440,21 @@ function showEndScreen() {
     }, 600);
 }
 
-function restartPresentation() {
+async function restartPresentation() {
+    // Update Supabase to sync with all clients
+    if (!isLocalAction) {
+        await updateSession({ current_slide: -1 });
+    }
+    restartPresentationLocal();
+}
+
+function restartPresentationLocal() {
+    // Stop audio
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+    }
+
     // Clear any running timer
     if (autoProgressTimer) {
         clearTimeout(autoProgressTimer);
