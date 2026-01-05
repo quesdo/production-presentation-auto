@@ -1,17 +1,17 @@
 // ===== PRESENTATION DATA WITH AUDIO TIMINGS =====
 const slides = [
     {
-        text: "Virtual Twin of the Production System\n\nGuide: how do we meet higher production rates?\nAnd how do we adapt our lines to aerospace & defense products?",
+        text: "Virtual Twin of the Production System",
         media: null,
         timestamp: 0 // Start at 0s
     },
     {
-        text: "The virtual twin of the production system brings everything together:\n• machines, their kinematics and programs;\n• operators and their skills;\n• work instructions;\n• material flows;\n• manufacturing methods;\n• automation resources.\nInside this virtual world, we deploy virtual companions.",
+        text: "The virtual twin of the production system brings everything together: machines, their kinematics and programs, operators and their skills, work instructions, material flows, manufacturing methods and automation resources.\n\nInside this virtual world, we deploy virtual companions.",
         media: "PSY 1",
         timestamp: 3 // 3s - after start click
     },
     {
-        text: "Here's a concrete example:\nan aerospace & defense contract requires a 40% capacity increase on a critical assembly line.\nThe Virtual Twin allows multiple layout scenarios, optimizes cycle times, proposes new line-balancing strategies, validates operator movements in simulation and anticipates ergonomic risks.",
+        text: "Here's a concrete example: An aerospace and defense contract requires a 40% capacity increase on a critical assembly line. The virtual twin allows multiple layout scenarios, optimizes cycle times, proposes new line balancing strategies, validates operator movements in simulation, and anticipates ergonomic risks. The virtual companion supports work instructions updates and execution.",
         media: "PSY 2",
         timestamp: 18 // 18s
     },
@@ -21,12 +21,12 @@ const slides = [
         timestamp: 36 // 36s
     },
     {
-        text: "Now virtual meets real — this is Sense Computing.\nOn an assembly station, machine vision detects in real time\npotential errors, missing tools, or incorrect component orientation.\nThe operator receives contextual guidance in a hybrid virtual–real environment.",
+        text: "Now virtual meets real. This is sense computing. On an assembly station, machine vision detects in real time potential errors, missing tools or incorrect component orientation. The operator receives contextual guidance in a hybrid virtual-real environment.",
         media: "PSY 4",
         timestamp: 41 // 41s
     },
     {
-        text: "The result?\nErrors are prevented before they happen,\nand know-how is captured and continuously capitalized in order to ensure the right level of productivity to address the A&D market.",
+        text: "The result? Errors are prevented before they happen, and know-how is captured and continuously capitalized in order to ensure the right level of productivity to address the A&D market.",
         media: "PSY Content",
         timestamp: 59 // 59s
     }
