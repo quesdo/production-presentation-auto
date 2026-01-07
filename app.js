@@ -46,6 +46,7 @@ let autoProgressTimer = null; // Timer for auto progression
 let isPresentationRunning = false; // Track if presentation is running
 let audioPlayer = null; // Audio element
 let audioStartTime = null; // Track when audio started
+let syncTimer = null; // Timer for syncing when audio doesn't play
 
 // ===== SDK INTEGRATION =====
 // Function to send visibility messages to the SDK platform
@@ -194,22 +195,7 @@ async function syncToSlide(targetSlide, audioTimestamp) {
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
 
-        // Start audio playback
-        if (audioPlayer && !audioPlayer.playing) {
-            try {
-                // Sync audio to the timestamp if provided
-                if (audioTimestamp !== undefined) {
-                    audioPlayer.currentTime = audioTimestamp;
-                }
-                await audioPlayer.play();
-                audioStartTime = Date.now();
-                console.log('Audio started (synced)');
-            } catch (error) {
-                console.error('Error playing audio:', error);
-            }
-        }
-
-        // Advance to first slide
+        // Advance to first slide - audio will start in nextSlideLocal()
         currentSlide = 0;
         nextSlideLocal();
     } else if (targetSlide > currentSlide) {
@@ -221,22 +207,9 @@ async function syncToSlide(targetSlide, audioTimestamp) {
             soundStarted = true;
             isPresentationRunning = true;
             nextBtn.style.display = 'none';
-
-            // Start audio if not already playing
-            if (audioPlayer && !audioPlayer.playing) {
-                try {
-                    if (audioTimestamp !== undefined) {
-                        audioPlayer.currentTime = audioTimestamp;
-                    }
-                    await audioPlayer.play();
-                    console.log('Audio started (synced)');
-                } catch (error) {
-                    console.error('Error playing audio:', error);
-                }
-            }
         }
 
-        // Sync to target slide
+        // Sync to target slide - audio will start in nextSlideLocal() for slide 0
         currentSlide = targetSlide;
         nextSlideLocal();
     }
@@ -305,7 +278,7 @@ function initPresentation() {
 }
 
 // Handle audio time updates to sync slides
-function handleAudioTimeUpdate() {
+async function handleAudioTimeUpdate() {
     if (!isPresentationRunning || !audioPlayer) return;
 
     const currentTime = audioPlayer.currentTime;
@@ -313,11 +286,50 @@ function handleAudioTimeUpdate() {
     // Find the next slide that should be shown based on audio time
     for (let i = slides.length - 1; i >= 0; i--) {
         if (currentTime >= slides[i].timestamp && currentSlide < i) {
+            // Update Supabase to sync all clients
+            if (!isLocalAction) {
+                await updateSession({
+                    current_slide: i,
+                    audio_timestamp: currentTime
+                });
+            }
+
             currentSlide = i;
             nextSlideLocal();
             break;
         }
     }
+}
+
+// Fallback timer for when audio doesn't play (autoplay blocked)
+function startSyncTimer() {
+    if (syncTimer) clearInterval(syncTimer);
+
+    const startTime = Date.now();
+    syncTimer = setInterval(() => {
+        if (!isPresentationRunning) {
+            clearInterval(syncTimer);
+            return;
+        }
+
+        // Calculate elapsed time in seconds
+        const elapsed = (Date.now() - startTime) / 1000;
+
+        // Find the next slide that should be shown based on elapsed time
+        for (let i = slides.length - 1; i >= 0; i--) {
+            if (elapsed >= slides[i].timestamp && currentSlide < i) {
+                currentSlide = i;
+                nextSlideLocal();
+                break;
+            }
+        }
+
+        // Stop timer if we've reached the last slide
+        if (currentSlide === slides.length - 1 && elapsed > slides[slides.length - 1].timestamp + 10) {
+            clearInterval(syncTimer);
+            handleAudioEnded();
+        }
+    }, 100); // Check every 100ms
 }
 
 // Handle audio ended
@@ -337,7 +349,7 @@ function handleAudioEnded() {
 async function nextSlide() {
     const nextBtn = document.getElementById('nextBtn');
 
-    // On first click, show Manufacturing Sound and start audio presentation
+    // On first click, show Manufacturing Sound and start presentation
     if (!soundStarted) {
         // Update Supabase FIRST to sync with all clients (BEFORE changing local state)
         if (!isLocalAction) {
@@ -355,18 +367,7 @@ async function nextSlide() {
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
 
-        // Start audio playback
-        if (audioPlayer) {
-            try {
-                await audioPlayer.play();
-                audioStartTime = Date.now();
-                console.log('Audio started');
-            } catch (error) {
-                console.error('Error playing audio:', error);
-            }
-        }
-
-        // Show first slide
+        // Show first slide - audio will start in nextSlideLocal()
         currentSlide = 0;
         nextSlideLocal();
     }
@@ -403,6 +404,18 @@ function nextSlideLocal() {
         setTimeout(() => {
             textContent.classList.remove('slide-in');
             textContent.classList.add('show');
+
+            // Start audio when first slide appears (currentSlide === 0)
+            if (currentSlide === 0 && audioPlayer && !audioPlayer.paused === false) {
+                audioPlayer.play().then(() => {
+                    audioStartTime = Date.now();
+                    console.log('Audio started on first slide display');
+                }).catch(error => {
+                    console.error('Error playing audio on slide display:', error);
+                    // Start timer fallback if audio still fails
+                    startSyncTimer();
+                });
+            }
         }, 100);
 
         // Update progress
@@ -456,10 +469,14 @@ function restartPresentationLocal() {
         audioPlayer.currentTime = 0;
     }
 
-    // Clear any running timer
+    // Clear any running timers
     if (autoProgressTimer) {
         clearTimeout(autoProgressTimer);
         autoProgressTimer = null;
+    }
+    if (syncTimer) {
+        clearInterval(syncTimer);
+        syncTimer = null;
     }
 
     // Hide all media
