@@ -414,6 +414,21 @@ function nextSlideLocal() {
                     console.error('Error playing audio on slide display:', error);
                     // Start timer fallback if audio still fails
                     startSyncTimer();
+
+                    // Show "Enable Audio" button for users who didn't click Start
+                    const nextBtn = document.getElementById('nextBtn');
+                    nextBtn.querySelector('.btn-text').textContent = '🔊 Enable Audio';
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => {
+                        audioPlayer.play().then(() => {
+                            audioStartTime = Date.now();
+                            console.log('Audio enabled by user');
+                            nextBtn.style.display = 'none';
+                        }).catch(e => {
+                            console.error('Still cannot play audio:', e);
+                            alert('Please check your browser audio settings');
+                        });
+                    };
                 });
             }
         }, 100);
