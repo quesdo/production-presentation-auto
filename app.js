@@ -192,6 +192,10 @@ async function syncToSlide(targetSlide, audioTimestamp) {
         soundStarted = true;
         isPresentationRunning = true;
 
+        // HIDE AS IS Production and SHOW PSY Content immediately when starting
+        hideASISProduction();
+        showMedia("PSY Content");
+
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
 
@@ -206,6 +210,11 @@ async function syncToSlide(targetSlide, audioTimestamp) {
             toggleVisibility("Manufacturing Sound", true);
             soundStarted = true;
             isPresentationRunning = true;
+
+            // HIDE AS IS Production and SHOW PSY Content immediately when starting
+            hideASISProduction();
+            showMedia("PSY Content");
+
             nextBtn.style.display = 'none';
         }
 
@@ -364,6 +373,10 @@ async function nextSlide() {
         soundStarted = true;
         isPresentationRunning = true;
 
+        // HIDE AS IS Production and SHOW PSY Content immediately when starting
+        hideASISProduction();
+        showMedia("PSY Content");
+
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
 
@@ -390,11 +403,6 @@ function nextSlideLocal() {
         // Show new media if present (without hiding previous ones)
         if (slide.media) {
             showMedia(slide.media);
-
-            // Hide AS IS Production when showing PSY Content (last media)
-            if (slide.media === "PSY Content") {
-                hideASISProduction();
-            }
         }
 
         // Animate in new text
