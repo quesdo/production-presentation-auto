@@ -478,11 +478,8 @@ function showEndScreen() {
 }
 
 async function restartPresentation() {
-    // Update Supabase to sync with all clients
-    if (!isLocalAction) {
-        await updateSession({ current_slide: -1 });
-    }
-    restartPresentationLocal();
+    // Simply reload the page for a clean restart
+    window.location.reload();
 }
 
 function restartPresentationLocal() {
@@ -507,6 +504,9 @@ function restartPresentationLocal() {
 
     // Show AS IS Production again when restarting
     toggleVisibility("AS IS Production", true);
+
+    // Hide PSY Content when restarting (it will show on Start Presentation click)
+    toggleVisibility("PSY Content", false);
 
     // Hide Manufacturing Sound when restarting (it will show on first click)
     toggleVisibility("Manufacturing Sound", false);
