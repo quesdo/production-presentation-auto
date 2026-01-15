@@ -282,6 +282,18 @@ function initPresentation() {
     // Next button click handler
     nextBtn.addEventListener('click', nextSlide);
 
+    // Mute button handler
+    const muteBtn = document.getElementById('muteBtn');
+    if (muteBtn) {
+        muteBtn.addEventListener('click', () => {
+            if (audioPlayer) {
+                audioPlayer.muted = !audioPlayer.muted;
+                muteBtn.classList.toggle('muted');
+                muteBtn.querySelector('.mute-icon').textContent = audioPlayer.muted ? '🔇' : '🔊';
+            }
+        });
+    }
+
     // Update progress
     updateProgress();
 }

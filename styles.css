@@ -159,6 +159,41 @@ body {
     transform: translateX(5px);
 }
 
+/* ===== MUTE BUTTON ===== */
+.mute-btn {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.mute-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 4px 20px rgba(77, 166, 255, 0.4);
+}
+
+.mute-btn.muted {
+    background: rgba(255, 68, 68, 0.2);
+    border-color: rgba(255, 68, 68, 0.5);
+}
+
+.mute-icon {
+    font-size: 1.8rem;
+    user-select: none;
+}
+
 /* ===== PROGRESS INDICATOR ===== */
 .progress-container {
     position: fixed;
