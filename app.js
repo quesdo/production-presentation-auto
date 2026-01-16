@@ -181,8 +181,10 @@ async function syncToSlide(targetSlide, audioTimestamp) {
     isLocalAction = true;
 
     if (targetSlide === -1 && currentSlide !== -1) {
-        // Restart to beginning
-        restartPresentationLocal();
+        // Restart signal received - reload page for clean restart
+        console.log('Restart signal received - reloading page');
+        window.location.reload();
+        return;
     } else if (targetSlide === 0 && currentSlide === -1) {
         // Start presentation from beginning
         const nextBtn = document.getElementById('nextBtn');
@@ -490,7 +492,15 @@ function showEndScreen() {
 }
 
 async function restartPresentation() {
-    // Simply reload the page for a clean restart
+    // Send restart signal to all clients via Supabase
+    if (!isLocalAction) {
+        await updateSession({ current_slide: -1 });
+    }
+
+    // Wait for message to be sent
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Reload the controller's page
     window.location.reload();
 }
 
