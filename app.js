@@ -181,8 +181,13 @@ async function syncToSlide(targetSlide, audioTimestamp) {
     isLocalAction = true;
 
     if (targetSlide === -1 && currentSlide !== -1) {
-        // Restart signal received - reload page for clean restart
-        console.log('Restart signal received - reloading page');
+        // Restart signal received - hide media before reload
+        console.log('Restart signal received - hiding media and reloading page');
+        hideAllMedia();
+        toggleVisibility("Manufacturing Sound", false);
+
+        // Wait for hide commands to be processed before reload
+        await new Promise(resolve => setTimeout(resolve, 100));
         window.location.reload();
         return;
     } else if (targetSlide === 0 && currentSlide === -1) {
@@ -269,11 +274,8 @@ function initPresentation() {
     audioPlayer.addEventListener('timeupdate', handleAudioTimeUpdate);
     audioPlayer.addEventListener('ended', handleAudioEnded);
 
-    // Hide all PSY media at start (but NOT AS IS Production yet)
-    hideAllMedia();
-
-    // Hide Manufacturing Sound initially
-    toggleVisibility("Manufacturing Sound", false);
+    // Don't hide/show anything at initial load - let SDK scene stay as is
+    // Hiding will happen when presentation starts
 
     // Show intro state
     setTimeout(() => {
@@ -492,12 +494,16 @@ function showEndScreen() {
 }
 
 async function restartPresentation() {
+    // Hide all media and Manufacturing Sound before restart
+    hideAllMedia();
+    toggleVisibility("Manufacturing Sound", false);
+
     // Send restart signal to all clients via Supabase
     if (!isLocalAction) {
         await updateSession({ current_slide: -1 });
     }
 
-    // Wait for message to be sent
+    // Wait for message to be sent and hide commands to be processed
     await new Promise(resolve => setTimeout(resolve, 300));
 
     // Reload the controller's page
