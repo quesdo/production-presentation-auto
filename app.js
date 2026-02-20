@@ -103,30 +103,44 @@ async function initSupabase() {
 
         console.log('Supabase client initialized');
 
-        // Get or create session
-        const { data, error } = await supabaseClient
+        // Get session key from URL param - 'default' keeps originals working
+        const sessionKey = new URLSearchParams(window.location.search).get('session') || 'default';
+        console.log('Session key:', sessionKey);
+
+        // Find existing row for this session key
+        let { data, error } = await supabaseClient
             .from('production_presentation_session')
             .select('*')
-            .limit(1)
+            .eq('session_key', sessionKey)
             .single();
 
-        if (error) {
-            console.error('Error fetching session:', error);
-            return;
+        // If no row exists for this session key, create one
+        if (error || !data) {
+            const { data: newRow, error: insertError } = await supabaseClient
+                .from('production_presentation_session')
+                .insert({ session_key: sessionKey, current_slide: -1, audio_timestamp: 0 })
+                .select()
+                .single();
+            if (insertError) {
+                console.error('Error creating session:', insertError);
+                return;
+            }
+            data = newRow;
         }
 
         sessionId = data.id;
-        console.log('Connected to session:', sessionId);
+        console.log('Connected to session:', sessionId, '(key:', sessionKey, ')');
 
-        // Subscribe to real-time updates
+        // Subscribe to real-time updates filtered to this specific row
         realtimeChannel = supabaseClient
-            .channel('production_presentation_session_changes')
+            .channel(`production_session_${sessionKey}`)
             .on(
                 'postgres_changes',
                 {
                     event: 'UPDATE',
                     schema: 'public',
-                    table: 'production_presentation_session'
+                    table: 'production_presentation_session',
+                    filter: `id=eq.${sessionId}`
                 },
                 handleSessionUpdate
             )
