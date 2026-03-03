@@ -103,8 +103,8 @@ async function initSupabase() {
 
         console.log('Supabase client initialized');
 
-        // Get session key from URL param - 'default' keeps originals working
-        const sessionKey = new URLSearchParams(window.location.search).get('session') || 'default';
+        // Get session key from URL param - 'auto' isolates from collab by default
+        const sessionKey = new URLSearchParams(window.location.search).get('session') || 'auto';
         console.log('Session key:', sessionKey);
 
         // Find existing row for this session key
