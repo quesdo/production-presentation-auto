@@ -70,6 +70,11 @@ function showMedia(mediaName) {
         toggleVisibility(mediaName, true);
         activeMedia = mediaName;
         console.log(`Showing 3D object: ${mediaName}`);
+
+        if (mediaName === "TOBELShape") {
+            toggleVisibility("General", false);
+            console.log("Hiding General for TOBELShape display");
+        }
     }
 }
 
