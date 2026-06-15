@@ -29,6 +29,11 @@ const slides = [
         text: "The result? Errors are prevented before they happen, and know-how is captured and continuously capitalized in order to ensure the right level of productivity to address the A&D market.",
         media: "PSY Content",
         timestamp: 59 // 59s
+    },
+    {
+        text: "OXOS Virtual Twin\nProduction System — Live 3D Experience",
+        media: "TOBELShape",
+        timestamp: 72 // 72s
     }
 ];
 
@@ -78,7 +83,7 @@ function hideMedia(mediaName) {
 
 // Function to hide all media
 function hideAllMedia() {
-    const allMedia = ["PSY 1", "PSY 2", "PSY 3", "PSY 4", "PSY 5", "PSY Content"];
+    const allMedia = ["PSY 1", "PSY 2", "PSY 3", "PSY 4", "PSY 5", "PSY Content", "TOBELShape"];
     allMedia.forEach(media => {
         toggleVisibility(media, false);
     });
