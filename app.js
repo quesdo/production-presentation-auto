@@ -32,7 +32,7 @@ const slides = [
     },
     {
         text: "OXOS Virtual Twin\nProduction System — Live 3D Experience",
-        media: "TOBELShape",
+        media: "virtual_training",
         timestamp: 72 // 72s
     }
 ];
@@ -71,9 +71,9 @@ function showMedia(mediaName) {
         activeMedia = mediaName;
         console.log(`Showing 3D object: ${mediaName}`);
 
-        if (mediaName === "TOBELShape") {
+        if (mediaName === "virtual_training") {
             toggleVisibility("General", false);
-            console.log("Hiding General for TOBELShape display");
+            console.log("Hiding General for virtual_training display");
         }
     }
 }
@@ -88,7 +88,7 @@ function hideMedia(mediaName) {
 
 // Function to hide all media
 function hideAllMedia() {
-    const allMedia = ["PSY 1", "PSY 2", "PSY 3", "PSY 4", "PSY 5", "PSY Content", "TOBELShape"];
+    const allMedia = ["PSY 1", "PSY 2", "PSY 3", "PSY 4", "PSY 5", "PSY Content", "virtual_training"];
     allMedia.forEach(media => {
         toggleVisibility(media, false);
     });
